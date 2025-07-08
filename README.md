@@ -35,7 +35,7 @@ npm run dev
 ## 🏗️ Features
 
 - **Clean Architecture**: Domain, Infrastructure, Application, and Presentation layers
-- **Dual Connection Support**: Connects to local Chrome (127.0.0.1:9222) with fallback to remote Chrome (35.197.149.222:9222)
+- **Multiple Connection Support**: Connects to local Chrome with fallback to multiple remote Chrome instances and preset configurations
 - **Three Use Cases**:
   1. **Web Scraping**: Extract data from websites (Hacker News demo)
   2. **Form Automation**: Fill forms automatically (W3Schools demo)
@@ -77,8 +77,16 @@ npm run dev
    # Chrome Connection Configuration
    LOCAL_CHROME_PORT=9222
    LOCAL_CHROME_HOST=127.0.0.1
+
+   # Multiple Remote Chrome Hosts (comma-separated, tried in order)
+   REMOTE_CHROME_HOSTS=35.197.149.222,35.197.149.223,35.197.149.224
    REMOTE_CHROME_PORT=9222
-   REMOTE_CHROME_HOST=your-remote-chrome-ip-here
+
+   # Alternative Chrome Configuration (Preset)
+   CHROME_PORT=9223
+   CHROME_ADDRESS=127.0.0.1
+   USER_DATA_DIR=/tmp/chrome-testing-profile
+   WINDOW_SIZE=800,600
 
    # Application Configuration
    DEFAULT_TIMEOUT=30000

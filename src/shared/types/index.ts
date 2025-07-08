@@ -46,3 +46,16 @@ export interface RetryConfig {
   delayMs: number;
   backoffMultiplier?: number;
 }
+
+export interface ChromePresetConfig {
+  port: number;
+  address: string;
+  userDataDir: string;
+  windowSize: string;
+}
+
+export interface AutomationLogConfig {
+  enabled: boolean;
+  level: string;
+  filePath: string;
+}

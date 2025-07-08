@@ -56,29 +56,41 @@ export class PlaywrightApplicationService {
 
   private async establishConnection(): Promise<string> {
     const config = AppConfig.getInstance();
-    const connectionConfigs = config.getConnectionConfigs();
+    const connectionConfigs = config.getAllConnectionConfigs();
 
-    // Try local connection first, then remote
-    for (const connectionConfig of connectionConfigs) {
+    console.log(`\n🔗 Attempting to connect to ${connectionConfigs.length} Chrome instances...`);
+
+    // Try all connections in order: local, remote hosts, preset
+    for (let i = 0; i < connectionConfigs.length; i++) {
+      const connectionConfig = connectionConfigs[i];
+      const connectionType = i === 0 ? 'local' :
+                           i <= config.remoteHosts.length ? `remote-${i}` : 'preset';
+
       try {
-        console.log(`\n🔗 Attempting connection to ${connectionConfig.host}:${connectionConfig.port}`);
-        
+        console.log(`\n🔗 [${i + 1}/${connectionConfigs.length}] Attempting ${connectionType} connection to ${connectionConfig.host}:${connectionConfig.port}`);
+
         const result: BrowserConnectionResult = await RetryUtils.withRetry(
           () => this.browserRepository.connect(connectionConfig),
           config.retryConfig,
-          `connection to ${connectionConfig.host}:${connectionConfig.port}`
+          `${connectionType} connection to ${connectionConfig.host}:${connectionConfig.port}`
         );
 
         if (result.success && result.browser) {
-          console.log(`✅ Successfully connected to ${connectionConfig.host}:${connectionConfig.port}`);
+          console.log(`✅ Successfully connected to ${connectionType} Chrome: ${connectionConfig.host}:${connectionConfig.port}`);
           return result.browser.id;
         }
       } catch (error) {
-        console.warn(`❌ Failed to connect to ${connectionConfig.host}:${connectionConfig.port}:`, error);
+        console.warn(`❌ Failed to connect to ${connectionType} Chrome (${connectionConfig.host}:${connectionConfig.port}):`, error);
         continue; // Try next connection
       }
     }
 
-    throw new Error('Failed to establish connection to any Chrome instance');
+    // Show summary of attempted connections
+    console.log(`\n📊 Connection Summary:`);
+    console.log(`   Local: ${config.localChrome.host}:${config.localChrome.port}`);
+    console.log(`   Remote hosts: ${config.remoteHosts.join(', ')}`);
+    console.log(`   Preset: ${config.chromePreset.address}:${config.chromePreset.port}`);
+
+    throw new Error(`Failed to establish connection to any of the ${connectionConfigs.length} Chrome instances`);
   }
 }

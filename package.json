@@ -8,13 +8,24 @@
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
     "test": "jest",
+    "test:playwright": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:remote": "playwright test tests/remote-chrome.spec.ts",
+    "test:simple": "playwright test tests/simple-remote.spec.ts",
     "lint": "eslint src/**/*.ts",
     "clean": "rimraf dist"
   },
-  "keywords": ["playwright", "typescript", "chrome", "automation", "clean-architecture"],
+  "keywords": [
+    "playwright",
+    "typescript",
+    "chrome",
+    "automation",
+    "clean-architecture"
+  ],
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "@playwright/test": "^1.53.1",
     "@types/node": "^20.0.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
@@ -25,7 +36,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "playwright": "^1.40.0",
-    "dotenv": "^16.0.0"
+    "dotenv": "^16.0.0",
+    "playwright": "^1.40.0"
   }
 }

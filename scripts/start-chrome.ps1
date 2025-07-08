@@ -1,11 +1,50 @@
+param(
+    [string]$Mode = "default",
+    [int]$Port = 9222,
+    [string]$Address = "127.0.0.1",
+    [string]$UserDataDir = "C:\temp\chrome-debug",
+    [string]$WindowSize = "1200,800"
+)
+
 Write-Host "Starting Chrome with remote debugging..." -ForegroundColor Green
+Write-Host "Mode: $Mode" -ForegroundColor Cyan
 Write-Host ""
 
-# Create temp directory for Chrome user data
-$chromeDataDir = "C:\temp\chrome-debug"
-if (!(Test-Path $chromeDataDir)) {
-    New-Item -ItemType Directory -Path $chromeDataDir -Force | Out-Null
-    Write-Host "Created Chrome data directory: $chromeDataDir" -ForegroundColor Yellow
+# Load environment variables if .env file exists
+if (Test-Path ".env") {
+    Get-Content ".env" | ForEach-Object {
+        if ($_ -match "^([^#][^=]+)=(.*)$") {
+            [Environment]::SetEnvironmentVariable($matches[1], $matches[2], "Process")
+        }
+    }
+    Write-Host "Loaded configuration from .env file" -ForegroundColor Yellow
+}
+
+# Set configuration based on mode
+if ($Mode -eq "preset") {
+    $Port = [int]($env:CHROME_PORT -or 9223)
+    $Address = $env:CHROME_ADDRESS -or "127.0.0.1"
+    $UserDataDir = $env:USER_DATA_DIR -or "/tmp/chrome-testing-profile"
+    $WindowSize = $env:WINDOW_SIZE -or "800,600"
+    Write-Host "Using preset configuration from environment" -ForegroundColor Cyan
+}
+
+# Convert Unix path to Windows path if needed
+if ($UserDataDir.StartsWith("/tmp/")) {
+    $UserDataDir = "C:\temp\" + $UserDataDir.Substring(5)
+}
+
+Write-Host "Configuration:" -ForegroundColor Yellow
+Write-Host "  Port: $Port" -ForegroundColor Gray
+Write-Host "  Address: $Address" -ForegroundColor Gray
+Write-Host "  User Data Dir: $UserDataDir" -ForegroundColor Gray
+Write-Host "  Window Size: $WindowSize" -ForegroundColor Gray
+Write-Host ""
+
+# Create user data directory
+if (!(Test-Path $UserDataDir)) {
+    New-Item -ItemType Directory -Path $UserDataDir -Force | Out-Null
+    Write-Host "Created Chrome data directory: $UserDataDir" -ForegroundColor Yellow
 }
 
 # Find Chrome executable
@@ -36,32 +75,38 @@ if ($null -eq $chromeExe) {
 }
 
 Write-Host "Found Chrome at: $chromeExe" -ForegroundColor Green
-Write-Host "Starting Chrome on port 9222..." -ForegroundColor Yellow
+Write-Host "Starting Chrome on port $Port..." -ForegroundColor Yellow
 
 # Start Chrome with remote debugging
 try {
-    Start-Process -FilePath $chromeExe -ArgumentList @(
-        "--remote-debugging-port=9222",
+    $arguments = @(
+        "--remote-debugging-port=$Port",
+        "--remote-debugging-address=$Address",
         "--no-first-run",
         "--no-default-browser-check",
-        "--user-data-dir=$chromeDataDir",
+        "--user-data-dir=$UserDataDir",
+        "--window-size=$WindowSize",
         "--disable-web-security",
         "--disable-features=VizDisplayCompositor"
-    ) -PassThru | Out-Null
-    
+    )
+
+    Start-Process -FilePath $chromeExe -ArgumentList $arguments -PassThru | Out-Null
+
     Write-Host ""
     Write-Host "✅ Chrome started successfully with remote debugging enabled!" -ForegroundColor Green
     Write-Host ""
-    Write-Host "You can verify by visiting: http://127.0.0.1:9222/json/version" -ForegroundColor Cyan
+    Write-Host "Connection details:" -ForegroundColor Cyan
+    Write-Host "  URL: http://$Address`:$Port/json/version" -ForegroundColor Gray
+    Write-Host "  Mode: $Mode" -ForegroundColor Gray
     Write-Host ""
     Write-Host "Now you can run the Playwright demo with: npm run dev" -ForegroundColor Yellow
     Write-Host ""
-    
+
 } catch {
     Write-Host "❌ Failed to start Chrome: $($_.Exception.Message)" -ForegroundColor Red
     Write-Host ""
     Write-Host "Try running this command manually:" -ForegroundColor Yellow
-    Write-Host "& `"$chromeExe`" --remote-debugging-port=9222 --no-first-run --no-default-browser-check --user-data-dir=`"$chromeDataDir`"" -ForegroundColor Gray
+    Write-Host "& `"$chromeExe`" --remote-debugging-port=$Port --remote-debugging-address=$Address --no-first-run --no-default-browser-check --user-data-dir=`"$UserDataDir`"" -ForegroundColor Gray
 }
 
 Write-Host "Press Enter to continue..." -ForegroundColor Gray
